@@ -27,7 +27,7 @@ approach and only requires $O(n^{\log_2 3})$ operations.  This speedup is gained
 by reducing the number of multiplications that must be done in
 exchange for a few more additions.
 
-Consider two binary multiplicands $U$ and $V$ that are powers of two.
+Consider two binary multiplicands $U$ and $V$ that are of even length.
 Furthermore, let the subscript 1 denotes the high-order bits of a given
 multiplicand and 2 the low-order bits.  The naive multiplication generates the
 product
@@ -36,24 +36,26 @@ product
 \end{align}
 To generate the product $UV$, four multiplications are required: $U_1V_1,
 U_1V_2, U_2V_1$, and $U_2 V_2$.  The following modification of the
-above equation is the inspiration for the algorithm and provides the speed increase:
+above equation is the inspiration for the algorithm:
 \begin{align}
 \begin{split}
 UV = \quad & U_1 V_1 2^{2n} + \\ &[(U_1 + U_2)(V_1 + V_2) - U_1 V_1 - U_2 V_2]2^n + \\
      & U_2 V_2
 \end{split}
 \end{align}
-In this form only three multiplications are needed: $U_iV_i$ and $(U_1 + U_2)(V_1 + V_2)$.
+In this form only three multiplications are needed: $U_iV_i$ and $(U_1
++ U_2)(V_1 + V_2)$.  The speedup gained in this approach comes from the trimming
+of one recursive call, in exchange for a couple of additions and subtractions.
 
 While Karatsuba's algorithm is easy to understand, a variety of faster
 multiplication routines exist. The GNU Multiple Precision Arithmetic Library
-(GMP) uses some of these routines in their own multiplication routines
+(GMP) uses some of these routines in their own multiplication library.
 \cite{gmp-mult}. By analyzing the multiplicand sizes, GMP chooses the most
-appropriate multiplication routine for the job.  The speed of the algorithms is
+appropriate algorithm for the job.  The speed of the algorithms is
 further increased through the inclusion of highly optimized assembly code
 \cite{gmp-home}.
 
-The sequential C implementation of Karatsuba's algorithm included here was the
+The sequential C implementation of Karatsuba's algorithm described here was the
 capstone project for Paul Purdom's \textit{Algorithm Design and Analysis} class
 taken in Spring 2014.  The goals of this project were twofold: the first was to
 have the fastest implementation possible when compared to other students in the
@@ -65,12 +67,12 @@ semester.
 \section{The Setup}
 The GMP library is used to generate random bignums which are then multiplied by
 both the implementation of Karatsuba's algorithm and GMP. GMP also provides
-methods for comparing two bignums for equality. Thus, I was able to compare
+methods for comparing two bignums for equality. Thus, I was able to assess
 Karatsuba's algorithm for both speed and correctness.
 
 In the vein of most divide-and-conquer algorithms, Karatsuba is amenable to
 parallelization.  Rather than waiting for sequential processes to work upon one
-half of the input at a time, both haves can be worked upon in parallel, with
+half of the input at a time, both halves can be worked upon in parallel, with
 their answers combined at the end of the computation.
 
 The programming model provided by Cilk was a natural choice for this project.
@@ -100,14 +102,14 @@ the sequential version of the code.  The most interesting are detailed below:
           that is tuned to the machine's architecture.
     \item \texttt{-fomit-frame-pointer} switch: Provides an extra register when the
            frame-pointer does not need to be kept around.
-    \item \texttt{-fdelete-null-pointer-checks} switch:  Do not check for null
-          pointers.
+    %\item \texttt{-fdelete-null-pointer-checks} switch:  Do not check for null
+          %pointers.
     \item \texttt{-fif-conversion2} switch: Per the online GCC manual, ``Transforms
           conditional jumps into branch-less equivalents''.
     \item \texttt{((flatten))} pragma: inline as much of a function's body as
           possible.
-    \item \texttt{((nothrow))} pragma: note that a function will not throw an
-          exception.
+    %\item \texttt{((nothrow))} pragma: note that a function will not throw an
+          %exception.
 \end{enumerate}
 
 Regardless of the number of optimizations enabled, poorly structured code will
@@ -126,7 +128,7 @@ For the sake of fully exploring the implementation, I experimented with larger i
 begins to produce wrong answers, while the parallel version produces wrong
 answers at four million bits.  To that end, the only measurements presented here
 were those that were correct.  The cause for these wrong answers is unknown.  It
-was originally believed to be a matter of freeing all allocated memory; this
+was originally believed to be a matter of freeing allocated memory; this
 remedied all incorrect answers in the parallel version for small inputs,
 though did not scale as expected. \newline
 \begin{figure}[t]
